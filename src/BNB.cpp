@@ -13,7 +13,7 @@ BNB::BNB(const std::shared_ptr<Data>& pData, double** pCost)
     }
 }
 
-void BNB::run(bool isBFS) {
+void BNB::run(bool isDFS) {
     Timer timer;
     timer.start();
 
@@ -21,28 +21,20 @@ void BNB::run(bool isBFS) {
     Node root; // no raiz
     getSolutionHungarian(root); // resolver AP_TSP a partir da instancia original
     double lower_bound = root.lower_bound;
+
     /* criacao da arvore */
     auto tree = std::list<Node>();
-
     tree.push_back(root);
+
     // gerar solução inicial.
     double upper_bound = solveGreedyTSP(mpData);
     while(!tree.empty()) {
         // escolher um dos nos da arvore
-        // DFS:
-        auto node = tree.back();
-        auto itNode = tree.end();
-        // BFS:
-        if(isBFS) {
-            node = tree.front();
-            itNode = tree.begin();
-        }
-        --itNode;
+        auto [node, itNode] = branchingStrategy(tree, isDFS);
 
         getSolutionHungarian(node);
         if(isg(node.lower_bound, upper_bound)) {
             tree.erase(itNode);
-            resetCosts();
             continue;
         }
         if(node.feasible) {
@@ -78,9 +70,8 @@ void BNB::runLB() {
     getSolutionHungarian(root); // resolver AP_TSP a partir da inst original
     double lower_bound = root.lower_bound;
     /* criacao da arvore */
-    // LB
     auto comp = [](const Node& n1, const Node& n2) {
-                    return isl(n1.lower_bound, n2.lower_bound);
+                    return isg(n1.lower_bound, n2.lower_bound);
                 };
     std::priority_queue<Node, std::vector<Node>, decltype(comp)> tree(comp);
 
@@ -89,13 +80,11 @@ void BNB::runLB() {
     double upper_bound = solveGreedyTSP(mpData);
     while(!tree.empty()) {
         // escolher um dos nos da arvore
-        // LB:
         auto node = tree.top();
 
         getSolutionHungarian(node);
         if(isg(node.lower_bound, upper_bound)) {
             tree.pop();
-            resetCosts();
             continue;
         }
         if(node.feasible) {
@@ -138,13 +127,11 @@ void BNB::getSolutionHungarian(Node& rNode) {
     hungarian_free(&p);
     rNode.feasible = isFeasible(mpData, rNode.subtours);
     rNode.chosen = choose(rNode.subtours);
-}
 
-void BNB::resetCosts() {
-    for(int i = 0; i < mpData->getDimension(); ++i) {
-        for(int j = 0; j < mpData->getDimension(); ++j){
-            mpCost[i][j] = mpCostCopy[i][j];
-        }
+    for(const auto& forb_arc : rNode.forbidden_arcs) {
+        mpCost[forb_arc.first][forb_arc.second] 
+                                  = mpCostCopy[forb_arc.first][forb_arc.second];
+        // std::cout << forb_arc.first << " " << forb_arc.second << std::endl;
     }
 }
 

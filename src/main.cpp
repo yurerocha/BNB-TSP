@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
 		auto bnb = std::make_shared<BNB>(pData, cost);
 		std::cout << "Branching strategy: " << argv[2] << std::endl;
 		if(string(argv[2]) == "dfs") {
-			bnb->runLB();
+			bnb->run(true);
 		} else if(string(argv[2]) == "bfs") {
 			bnb->run(false);
 		} else if(string(argv[2]) == "lb") {

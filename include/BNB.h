@@ -16,12 +16,21 @@ public:
     BNB(const std::shared_ptr<Data>& pData, double** pCost);
 
     /**
-     * @brief Run Branch and Bound algorithm with DFS or BFS branching strategy.
+     * @brief Run branch-and-bound algorithm with DFS or BFS branching strategy.
     */
-    void run(bool isBFS);
+    void run(bool isDFS);
+
+    auto branchingStrategy(const std::list<Node>& tree, bool isDFS) const {
+        if(isDFS) {
+            // tree.end() points to last pos + 1
+            return std::make_pair(tree.back(), --tree.end());
+        } else {
+            return std::make_pair(tree.front(), tree.begin());
+        }
+    };
 
     /**
-     * @brief Run Branch and Bound algorithm with lower bound branching 
+     * @brief Run branch-and-bound algorithm with lower bound branching 
      * strategy.
     */
     void runLB();
